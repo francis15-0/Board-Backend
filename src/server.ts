@@ -4,6 +4,12 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 import { RowDataPacket } from "mysql2";
 import jwt from "jsonwebtoken";
+import { requireAuth } from "./middleware/auth";
+import { Request, response } from "express";
+import { AuthRequest } from "./middleware/auth";
+
+
+
 const server = express();
 
 server.use(express.json());
@@ -12,7 +18,7 @@ server.use(cors());
 const salt = 10;
 
 const jwt_secret: any = process.env.JWT_SECRET;
-interface User {
+interface User{
   id: number;
   username: string;
   email: string;
@@ -79,6 +85,16 @@ server.post("/login", async (req, res) => {
     return res.status(500).json(error)
   }
 });
+
+
+server.get('/board', requireAuth, (req:AuthRequest, res : any)=>{
+    const user = req.user?.userId
+
+    console.log(user)
+    
+
+})
+
 
 server.listen("3000", () => {
   console.log("Server running on port 3000");
