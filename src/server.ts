@@ -14,6 +14,7 @@ const server = express();
 
 server.use(express.json());
 server.use(express.json());
+server.use(express.urlencoded({extended: true}))
 server.use(cors());
 const salt = 10;
 
@@ -38,7 +39,7 @@ server.post("/register", async (req, res) => {
     } else {
       const hash = await bcrypt.hash(password, salt);
       const [rows]: any = await pool.query(
-        "INSERT INTO users (username, email, password_hash) VALUES (?, ?)",
+        "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
         [username, email, hash]
       );
       if (rows.insertId > 0) {
@@ -58,7 +59,7 @@ server.post("/login", async (req, res) => {
     }
 
     const [rows] = await pool.query<(User & RowDataPacket)[]>(
-      `select id, password_hash, username FROM board where email = ?`,
+      `select id, password_hash, username FROM users where email = ?`,
       [email]
     );
 
@@ -89,6 +90,7 @@ server.post("/login", async (req, res) => {
 
 server.get('/board', requireAuth, (req:AuthRequest, res : any)=>{
     const user = req.user?.userId
+    
 
     console.log(user)
     
