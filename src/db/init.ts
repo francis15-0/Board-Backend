@@ -12,17 +12,19 @@ async function initDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
+    
+    console.log("✅ user table ready");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS boards(
       id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       user_id INT UNSIGNED NOT NULL,
-      tittle VARCHAR(255) NOT NULL,
+      title VARCHAR(255) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
       `);
-
+      
+      console.log("✅ boards table ready");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tasks(
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -39,7 +41,7 @@ async function initDatabase() {
       
       `);
 
-    console.log("✅ user table ready");
+    console.log("✅ tasks table ready");
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
     throw error;
