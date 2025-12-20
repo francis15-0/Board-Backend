@@ -126,9 +126,12 @@ server.post("/boards", requireAuth, async (req: AuthRequest, res: Response) => {
 server.get(
   "boards/:boardId",
   requireAuth,
-  (req: AuthRequest, res: Response) => {
+  async(req: AuthRequest, res: Response) => {
     try {
       const { boardId } = req.params;
+      const user = req.user?.userId
+
+      pool.query(`select `)
     } catch (error) {}
   }
 );
@@ -141,7 +144,7 @@ server.get(
     } catch (error) {}
   }
 );
-server.get(
+server.delete(
   "boards/:boardId",
   requireAuth,
   (req: AuthRequest, res: Response) => {
