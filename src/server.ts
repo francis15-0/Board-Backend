@@ -2,24 +2,22 @@ import express from "express";
 import pool from "./db/db";
 import bcrypt from "bcrypt";
 import cors from "cors";
-import { RowDataPacket } from "mysql2";
+import { RowDataPacket, ResultSetHeader } from "mysql2";
 import jwt from "jsonwebtoken";
 import { requireAuth } from "./middleware/auth";
-import { Request, response } from "express";
+import { Request, Response } from "express";
 import { AuthRequest } from "./middleware/auth";
-
-
 
 const server = express();
 
 server.use(express.json());
 server.use(express.json());
-server.use(express.urlencoded({extended: true}))
+server.use(express.urlencoded({ extended: true }));
 server.use(cors());
 const salt = 10;
 
 const jwt_secret: any = process.env.JWT_SECRET;
-interface User{
+interface User {
   id: number;
   username: string;
   email: string;
@@ -83,20 +81,75 @@ server.post("/login", async (req, res) => {
       user: user.username,
     });
   } catch (error) {
-    return res.status(500).json(error)
+    return res.status(500).json(error);
   }
 });
 
+server.get("/boards", requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user?.userId;
 
-server.get('/board', requireAuth, (req:AuthRequest, res : any)=>{
-    const user = req.user?.userId
-    
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `select * from boards where user_id = ?`,
+      [user]
+    );
 
-    console.log(user)
-    
+    return res.status(200).json({ boards: rows });
+  } catch (error) {
+    return res.status(500).json({ message: "Server Error" });
+  }
+});
 
-})
+server.post("/boards", requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user?.userId; // store the user id
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ message: "title is empty" });
+    }
+    const [result] = await pool.query<ResultSetHeader>(
+      `INSERT INTO boards (user_id, title) VALUES(?, ?)`,
+      [user, title]
+    );
+    if (result.affectedRows !== 1) {
+      return res.status(400).json({ message: "Board creation failed" });
+    }
 
+    return res
+      .status(201)
+      .json({ message: "Board created", boardId: result.insertId });
+  } catch (error) {
+    return res.status(500).json({ message: "Server Error", error });
+  }
+});
+
+server.get(
+  "boards/:boardId",
+  requireAuth,
+  (req: AuthRequest, res: Response) => {
+    try {
+      const { boardId } = req.params;
+    } catch (error) {}
+  }
+);
+server.get(
+  "boards/:boardId",
+  requireAuth,
+  (req: AuthRequest, res: Response) => {
+    try {
+      const { boardId } = req.params;
+    } catch (error) {}
+  }
+);
+server.get(
+  "boards/:boardId",
+  requireAuth,
+  (req: AuthRequest, res: Response) => {
+    try {
+      const { boardId } = req.params;
+    } catch (error) {}
+  }
+);
 
 server.listen("3000", () => {
   console.log("Server running on port 3000");
