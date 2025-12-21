@@ -124,33 +124,81 @@ server.post("/boards", requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 server.get(
-  "boards/:boardId",
+  "/boards/:boardId",
   requireAuth,
-  async(req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
-      const { boardId } = req.params;
-      const user = req.user?.userId
+      const boardId = Number(req.params.boardId);
+      const user = req.user?.userId;
 
-      pool.query(`select `)
-    } catch (error) {}
+      if (!Number.isInteger(boardId)) {
+        return res.status(400).json({ message: "Invalid board id" });
+      }
+
+      const [rows] = await pool.query<RowDataPacket[]>(
+        `select id, title, created_at FROM boards where id = ? And user_id = ?`,
+        [boardId, user]
+      );
+      if (rows.length == 0) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      return res.status(200).json({ board: rows });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal sever error", error });
+    }
   }
 );
-server.get(
-  "boards/:boardId",
+server.patch(
+  "/boards/:boardId",
   requireAuth,
-  (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
-      const { boardId } = req.params;
-    } catch (error) {}
+      const user = req.user?.userId;
+      const { title } = req.body;
+      if (!title) {
+        return res.status(400).json({ message: "Title is empty" });
+      }
+      const boardId = Number(req.params.boardId);
+      if (!Number.isInteger(boardId)) {
+        return res.status(400).json({ message: "Invalid board id" });
+      }
+      const [rows] = await pool.query<ResultSetHeader>(
+        `update boards set title = ? where id = ? and user_id = ?`,
+        [title, boardId, user]
+      );
+
+      if (rows.affectedRows !== 1) {
+        return res.status(400).json({ message: "Board not found" });
+      }
+      return res.status(200).json({ message: "Board renamed Succesfully" });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal sever error", error });
+    }
   }
 );
 server.delete(
-  "boards/:boardId",
+  "/boards/:boardId",
   requireAuth,
-  (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
-      const { boardId } = req.params;
-    } catch (error) {}
+      const user = req.user?.userId;
+      const boardId = Number(req.params.boardId);
+      if (!Number.isInteger(boardId)) {
+        return res.status(400).json({ message: "Invalid board id" });
+      }
+      const [rows] = await pool.query<ResultSetHeader>(
+        `DELETE FROM boards where id = ? and user_id = ?`,
+        [boardId, user]
+      );
+
+      if (rows.affectedRows !== 1) {
+        return res.status(400).json({ message: "Board not found" });
+      }
+
+      return res.status(200).json({ message: "Board deleted Succesfully" });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal sever error", error });
+    }
   }
 );
 
