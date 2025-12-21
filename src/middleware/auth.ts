@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 export interface AuthRequest extends Request{
     user? : {
         userId : number
+        email : string
     }
 }
 
@@ -23,6 +24,8 @@ export function requireAuth(req : AuthRequest, res : Response, next : NextFuncti
         }
 
         req.user = user
+    
+        
         next()
     })
 

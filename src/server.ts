@@ -57,7 +57,7 @@ server.post("/login", async (req, res) => {
     }
 
     const [rows] = await pool.query<(User & RowDataPacket)[]>(
-      `select id, password_hash, username FROM users where email = ?`,
+      `select id, email, password_hash, username FROM users where email = ?`,
       [email]
     );
 
@@ -72,8 +72,8 @@ server.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userName: user.username, userId: user.id },
-      jwt_secret
+      { userName: user.username, userId: user.id, email : user.email },
+      jwt_secret, {expiresIn : "1h"}
     );
 
     return res.status(200).json({
@@ -93,7 +93,6 @@ server.get("/boards", requireAuth, async (req: AuthRequest, res: Response) => {
       `select * from boards where user_id = ?`,
       [user]
     );
-
     return res.status(200).json({ boards: rows });
   } catch (error) {
     return res.status(500).json({ message: "Server Error" });
@@ -201,6 +200,17 @@ server.delete(
     }
   }
 );
+
+server.get('/boards/:boardId/task', requireAuth, async(req : AuthRequest , res : Response)=>{
+    
+    
+})
+server.post('/boards/:boardId/task', requireAuth, async(req : AuthRequest , res : Response)=>{
+
+})
+server.delete('/task/:taskId', requireAuth, async(req : AuthRequest , res : Response)=>{
+
+})
 
 server.listen("3000", () => {
   console.log("Server running on port 3000");
