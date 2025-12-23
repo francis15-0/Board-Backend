@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { requireAuth } from "./middleware/auth";
 import { Request, Response } from "express";
 import { AuthRequest } from "./middleware/auth";
+import { TaskPatchBody } from "./types";
 
 const server = express();
 
@@ -72,8 +73,9 @@ server.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userName: user.username, userId: user.id, email : user.email },
-      jwt_secret, {expiresIn : "1h"}
+      { userName: user.username, userId: user.id, email: user.email },
+      jwt_secret,
+      { expiresIn: "1h" }
     );
 
     return res.status(200).json({
@@ -201,16 +203,73 @@ server.delete(
   }
 );
 
-server.get('/boards/:boardId/task', requireAuth, async(req : AuthRequest , res : Response)=>{
-    
-    
-})
-server.post('/boards/:boardId/task', requireAuth, async(req : AuthRequest , res : Response)=>{
+server.get(
+  "/boards/:boardId/task",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const user = req.user?.userId;
+      const boardId = Number(req.params.boardId);
+      if (!Number.isInteger(boardId)) {
+        return res.status(400).json({ message: "Invalid board id" });
+      }
+      const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT id, board_id, title, description, status from tasks WHERE id = ? and user_id = ?`,
+        [boardId, user]
+      );
+      if (rows.length == 0) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      return res.status(200).json({ tasks: rows });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal sever error", error });
+    }
+  }
+);
+server.post(
+  "/boards/:boardId/task",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const user = req.user?.userId;
+    const { title, description, status } = req.body as TaskPatchBody;
+    const taskId = Number(req.params.taskId);
+    if (!Number.isFinite(taskId)) {
+      return res.status(400).json({ error: "Invalid taskId" });
+    }
 
-})
-server.delete('/task/:taskId', requireAuth, async(req : AuthRequest , res : Response)=>{
+    const update: string[] = [];
+    const values: any[] = [];
 
-})
+    if (title !== undefined) {
+      update.push("title = ?");
+      values.push(title);
+    }
+
+    if (description !== undefined) {
+      update.push("description = ?");
+      values.push(description);
+    }
+    if (status !== undefined) {
+      update.push("status = ?");
+      values.push(status);
+    }
+
+    if (update.length === 0) {
+      return res.status(400).json({ error: "No fields provided to update" });
+    }
+    
+    values.push(taskId)
+    values.push(user)
+    const sql : string = `update tasks set ${update.join(", ")} where id = ? and user_id = ?`
+
+    await pool.query<ResultSetHeader>(sql, values)
+  }
+);
+server.delete(
+  "/task/:taskId",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {}
+);
 
 server.listen("3000", () => {
   console.log("Server running on port 3000");
