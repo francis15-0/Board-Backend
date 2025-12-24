@@ -35,7 +35,7 @@ src/
   index.ts
 ```
 
-## Getting Starter
+## Getting Started
 ### 1. Clone
 ```bash
 git clone https://github.com/francis15-0/Board-Backend.git
