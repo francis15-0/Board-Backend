@@ -41,3 +41,24 @@ src/
 git clone https://github.com/francis15-0/Board-Backend.git
 cd board-backend
 ```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Create env file
+```env
+DB_HOST=hostname
+DB_USER=root
+DB_PASSWORD=yourpassword
+DB_NAME=taskboard
+JWT_SECRET=super_secret_key
+DB_PORT=3306
+```
+Modify valriable values with the right values
+
+### 4. Run Server
+```bash
+npm run dev
+```
