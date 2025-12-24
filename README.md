@@ -34,3 +34,10 @@ src/
     auth.ts
   index.ts
 ```
+
+## Getting Starter
+### 1. Clone
+```bash
+git clone https://github.com/francis15-0/Board-Backend.git
+cd board-backend
+```
