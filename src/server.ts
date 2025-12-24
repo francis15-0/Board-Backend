@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 import { requireAuth } from "./middleware/auth";
 import { Request, Response } from "express";
 import { AuthRequest } from "./middleware/auth";
-import { TaskPatchBody } from "./types";
+import { TaskPatchBody, Tasks } from "./types";
 
 const server = express();
 
@@ -226,49 +226,133 @@ server.get(
     }
   }
 );
+
 server.post(
   "/boards/:boardId/task",
   requireAuth,
   async (req: AuthRequest, res: Response) => {
-    const user = req.user?.userId;
-    const { title, description, status } = req.body as TaskPatchBody;
-    const taskId = Number(req.params.taskId);
-    if (!Number.isFinite(taskId)) {
-      return res.status(400).json({ error: "Invalid taskId" });
-    }
+    try {
+      const user = req.user?.userId;
+      const boardId = Number(req.params.boardId);
+      if (!Number.isInteger(boardId)) {
+        return res.status(400).json({ "'message": "Invalid board Id" });
+      }
+      const { title, description } = req.body;
+      if (!title || !description) {
+        return res
+          .status(400)
+          .json({ message: "title or description is empty" });
+      }
 
-    const update: string[] = [];
-    const values: any[] = [];
+      const [boards] = await pool.query<RowDataPacket[]>(
+        `select * from boards where id = ? and user_id = ?`,
+        [boardId, user]
+      );
+      if (boards.length == 0) {
+        return res
+          .status(403)
+          .json({ message: "You dont have authorization for this boards" });
+      }
+      const [result] = await pool.query<ResultSetHeader>(
+        `INSERT into task (board_id, user_id, title, description) VALUES(? , ? , ?, ?)`,
+        [boardId, user, title, description]
+      );
 
-    if (title !== undefined) {
-      update.push("title = ?");
-      values.push(title);
-    }
+      if (result.affectedRows !== 1) {
+        return res
+          .status(400)
+          .json({ message: "Creating new task was not Succesfull" });
+      }
 
-    if (description !== undefined) {
-      update.push("description = ?");
-      values.push(description);
+      return res
+        .status(200)
+        .json({ message: "Task created Succesfully", taskId: result.insertId });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: "Internal Server Error" });
     }
-    if (status !== undefined) {
-      update.push("status = ?");
-      values.push(status);
-    }
-
-    if (update.length === 0) {
-      return res.status(400).json({ error: "No fields provided to update" });
-    }
-    
-    values.push(taskId)
-    values.push(user)
-    const sql : string = `update tasks set ${update.join(", ")} where id = ? and user_id = ?`
-
-    await pool.query<ResultSetHeader>(sql, values)
   }
 );
+
+server.patch(
+  "/task/:taskId",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const user = req.user?.userId;
+      const { title, description, status } = req.body as TaskPatchBody;
+      const taskId = Number(req.params.taskId);
+      if (!Number.isFinite(taskId)) {
+        return res.status(400).json({ error: "Invalid taskId" });
+      }
+
+      const update: string[] = [];
+      const values: any[] = [];
+
+      if (title !== undefined) {
+        update.push("title = ?");
+        values.push(title);
+      }
+
+      if (description !== undefined) {
+        update.push("description = ?");
+        values.push(description);
+      }
+      if (status !== undefined) {
+        update.push("status = ?");
+        values.push(status);
+      }
+
+      if (update.length === 0) {
+        return res.status(400).json({ error: "No fields provided to update" });
+      }
+
+      values.push(taskId);
+      values.push(user);
+      const sql: string = `update tasks set ${update.join(
+        ", "
+      )} where id = ? and user_id = ?`;
+
+      const [result] = await pool.query<ResultSetHeader>(sql, values);
+      if (result.affectedRows !== 1) {
+        return res.status(400).json({ message: "Insert failed" });
+      }
+
+      const [rows] = await pool.query<(Tasks & RowDataPacket)[]>(
+        "SELECT * FROM tasks WHERE id = ? and user_id = ?",
+        [taskId, user]
+      );
+      return res.status(200).json({ task: rows });
+    } catch (error) {
+      return res.status(500).json({ error: error });
+    }
+  }
+);
+
 server.delete(
   "/task/:taskId",
   requireAuth,
-  async (req: AuthRequest, res: Response) => {}
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const user = req.user?.userId;
+      const taskId = Number(req.params.taskId);
+      if (Number.isInteger(taskId)) {
+        return res.status(401).json({ message: "Enter a valid task id " });
+      }
+      const [result] = await pool.query<ResultSetHeader>(
+        `DELETE from tasks where id = ? and user_id = ?`,
+        [taskId, user]
+      );
+      if (result.affectedRows !== 1) {
+        return res.status(400).json({ message: "Task could no be deleted" });
+      }
+
+      return res.status(200).json({ message: "Task was Succesfully Deleted" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
 );
 
 server.listen("3000", () => {
