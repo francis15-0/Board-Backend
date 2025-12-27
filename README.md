@@ -62,3 +62,51 @@ Modify valriable values with the right values
 ```bash
 npm run dev
 ```
+### 5. Authentication
+Authentication
+This API uses JWT Bearer tokens.
+After login/register, include the token in requests:
+```txt
+Authorization: Bearer <token>
+```
+
+### 5. Api Endpoints
+
+####  Auth
+|Method   |Endpoint | Description
+|---      | ---- | ----|
+|POST    |/register | Creates a new user|
+|POST    |/login | Login and recieve jwt tokens|
+
+#### Board
+|Method   |Endpoint| Description
+|---      | ----   | ----|
+|GET      |/boards | Gets all board from the logged in user|
+|POST     |/boards | Create new board for the logged in user|
+|GET      |/boards:boardId | Gets specific board (Authorized)|
+|PATCH    |/boards:boardId |update a board (Authorized)|
+|DELETE   |/boards:boardId |deletes a board (Authorized)|
+
+
+#### Task
+|Method   |Endpoint | Description
+|---      | ---- | ----|
+|GET    |/boards/:boardId/task |Get task for a specific user and board number |
+|POST    |/boards/:boardId/task |Creates new task for a specific user and board |
+|DELETE|/task/:taskId |Delete  task for a specific user and board |
+
+### Authorization Model
+
+All resources are user-owned: A user can only access boards where boards user_id = req.user.userId
+Tasks are only accessible if the user owns the parent board
+(enforced via SQL checks / joins)
+This prevents users from creating/deleting tasks in boards they don’t own.
+
+
+### Example Request
+
+```bash
+curl -X POST http://localhost:3000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"demo","email":"demo@email.com","password":"password123"}'
+```

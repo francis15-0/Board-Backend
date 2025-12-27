@@ -222,6 +222,7 @@ server.get(
       }
       return res.status(200).json({ tasks: rows });
     } catch (error) {
+      console.log(error)
       return res.status(500).json({ message: "Internal sever error", error });
     }
   }
