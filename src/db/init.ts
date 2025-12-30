@@ -1,6 +1,6 @@
 import pool from "../db/db";
 
-async function initDatabase() {
+export async function initDatabase() {
   try {
     console.log("Initializing Database...");
     await pool.query(`
