@@ -8,6 +8,7 @@ import { requireAuth } from "./middleware/auth";
 import { Request, Response } from "express";
 import { AuthRequest } from "./middleware/auth";
 import { TaskPatchBody, Tasks } from "./types";
+import { initDatabase } from "./db/init";
 
 const server = express();
 
@@ -356,6 +357,7 @@ server.delete(
   }
 );
 
-server.listen("3000", () => {
+server.listen("3000", async() => {
+  await initDatabase();
   console.log("Server running on port 3000");
 });
