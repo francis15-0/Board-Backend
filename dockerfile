@@ -1,6 +1,6 @@
 FROM node:25.1.0
 WORKDIR /app
-COPY packgake.json /app
+COPY package.json /app
 RUN npm install
 COPY . .
 EXPOSE 3000
